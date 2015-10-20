@@ -90,8 +90,8 @@ void NGLScene::initializeGL()
   // we are creating a shader for Pass 1
   shader->createShaderProgram("Pass1");
   // now we are going to create empty shaders for Frag and Vert
-  shader->attachShader("Pass1Vertex",ngl::VERTEX);
-  shader->attachShader("Pass1Fragment",ngl::FRAGMENT);
+  shader->attachShader("Pass1Vertex",ngl::ShaderType::VERTEX);
+  shader->attachShader("Pass1Fragment",ngl::ShaderType::FRAGMENT);
   // attach the source
   shader->loadShaderSource("Pass1Vertex","shaders/Pass1Vert.glsl");
   shader->loadShaderSource("Pass1Fragment","shaders/Pass1Frag.glsl");
@@ -112,8 +112,8 @@ void NGLScene::initializeGL()
   // we are creating a shader for Pass 2
   shader->createShaderProgram("Pass2");
   // now we are going to create empty shaders for Frag and Vert
-  shader->attachShader("Pass2Vertex",ngl::VERTEX);
-  shader->attachShader("Pass2Fragment",ngl::FRAGMENT);
+  shader->attachShader("Pass2Vertex",ngl::ShaderType::VERTEX);
+  shader->attachShader("Pass2Fragment",ngl::ShaderType::FRAGMENT);
   // attach the source
   shader->loadShaderSource("Pass2Vertex","shaders/Pass2Vert.glsl");
   shader->loadShaderSource("Pass2Fragment","shaders/Pass2Frag.glsl");
@@ -134,8 +134,8 @@ void NGLScene::initializeGL()
   // we are creating a shader for Debug pass
   shader->createShaderProgram("Debug");
   // now we are going to create empty shaders for Frag and Vert
-  shader->attachShader("DebugVertex",ngl::VERTEX);
-  shader->attachShader("DebugFragment",ngl::FRAGMENT);
+  shader->attachShader("DebugVertex",ngl::ShaderType::VERTEX);
+  shader->attachShader("DebugFragment",ngl::ShaderType::FRAGMENT);
   // attach the source
   shader->loadShaderSource("DebugVertex","shaders/DebugVert.glsl");
   shader->loadShaderSource("DebugFragment","shaders/DebugFrag.glsl");
@@ -159,8 +159,8 @@ void NGLScene::initializeGL()
   // we are creating a shader for Lighting pass
   shader->createShaderProgram("Lighting");
   // now we are going to create empty shaders for Frag and Vert
-  shader->attachShader("LightingVertex",ngl::VERTEX);
-  shader->attachShader("LightingFragment",ngl::FRAGMENT);
+  shader->attachShader("LightingVertex",ngl::ShaderType::VERTEX);
+  shader->attachShader("LightingFragment",ngl::ShaderType::FRAGMENT);
   // attach the source
   shader->loadShaderSource("LightingVertex","shaders/LightingPassVert.glsl");
   shader->loadShaderSource("LightingFragment","shaders/LightingPassFrag.glsl");
