@@ -51,14 +51,12 @@ NGLScene::~NGLScene()
   glDeleteTextures(1,&m_normalTexID);
 }
 
-void NGLScene::resizeGL(int _w, int _h)
+void NGLScene::resizeGL(QResizeEvent *_event)
 {
-  // set the viewport for openGL we need to take into account retina display
-  // etc by using the pixel ratio as a multiplyer
-  glViewport(0,0,_w*devicePixelRatio(),_h*devicePixelRatio());
+  m_width=_event->size().width()*devicePixelRatio();
+  m_height=_event->size().height()*devicePixelRatio();
   // now set the camera size values as the screen size has changed
-  m_cam->setShape(45.0f,(float)width()/height(),0.05f,350.0f);
-  update();
+  m_cam.setShape(45.0f,(float)width()/height(),0.05f,350.0f);
 }
 
 
@@ -70,14 +68,14 @@ void NGLScene::initializeGL()
   // Now we will create a basic Camera from the graphics library
   // This is a static camera so it only needs to be set once
   // First create Values for the camera position
-  ngl::Vec3 from(0,2,5);
-  ngl::Vec3 to(0,0,0);
-  ngl::Vec3 up(0,1,0);
+  ngl::Vec3 from(0.0f,2.0f,5.0f);
+  ngl::Vec3 to(0.0f,0.0f,0.0f);
+  ngl::Vec3 up(0.0f,1.0f,0.0f);
   // now load to our new camera
-  m_cam= new ngl::Camera(from,to,up);
+  m_cam.set(from,to,up);
   // set the shape using FOV 45 Aspect Ratio based on Width and Height
   // The final two are near and far clipping planes of 0.5 and 10
-  m_cam->setShape(45,(float)float(width()/height()),0.05,350);
+  m_cam.setShape(45.0f,(float)float(width()/height()),0.05f,350.0f);
 
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);			   // Grey Background
   // enable depth testing for drawing
@@ -179,23 +177,21 @@ void NGLScene::initializeGL()
 
   shader->setShaderParam2f("wh",width()*devicePixelRatio(),height()*devicePixelRatio());
 
-  m_text = new ngl::Text(QFont("Arial",14));
+  m_text.reset(new ngl::Text(QFont("Arial",14)));
   m_text->setScreenSize(width(),height());
 
   m_screenQuad = new ScreenQuad("Debug");
-  // as re-size is not explicitly called we need to do this.
-  glViewport(0, 0, width() * devicePixelRatio(), height() * devicePixelRatio());
   ngl::VAOPrimitives *prim=ngl::VAOPrimitives::instance();
-  prim->createSphere("sphere",0.5,50);
+  prim->createSphere("sphere",0.5f,50.0f);
 
-  prim->createSphere("lightSphere",0.1,10);
-  prim->createCylinder("cylinder",0.5,1.4,40,40);
+  prim->createSphere("lightSphere",0.1f,10.0f);
+  prim->createCylinder("cylinder",0.5f,1.4f,40.0f,40.0f);
 
-  prim->createCone("cone",0.5,1.4,20,20);
+  prim->createCone("cone",0.5f,1.4f,20.0f,20.0f);
 
-  prim->createDisk("disk",0.8,120);
-  prim->createTorus("torus",0.15,0.4,40,40);
-  prim->createTrianglePlane("plane",14,14,80,80,ngl::Vec3(0,1,0));
+  prim->createDisk("disk",0.8f,120.0f);
+  prim->createTorus("torus",0.15f,0.4f,40.0f,40.0f);
+  prim->createTrianglePlane("plane",14.0f,14.0f,80.0f,80.0f,ngl::Vec3(0.0f,1.0f,0.0f));
 
   createFrameBuffer();
   printFrameBufferInfo(m_gbuffer);
@@ -216,15 +212,10 @@ void NGLScene::loadMatricesToShader()
   ngl::Mat4 M;
 
   M=m_transform.getMatrix()*m_mouseGlobalTX;
-  MV=  M*m_cam->getViewMatrix();
-  MVP=  MV*m_cam->getProjectionMatrix();
-
-
+  MV=  M*m_cam.getViewMatrix();
+  MVP=  MV*m_cam.getProjectionMatrix();
   shader->setShaderParamFromMat4("MVP",MVP);
   shader->setShaderParamFromMat4("MV",MV);
- // shader->setShaderParamFromMat4("M",M);
-
-
 }
 
 
@@ -478,17 +469,15 @@ void NGLScene::renderLightPass(const std::string &_shader)
       ngl::Mat4 M;
 
       M=m_transform.getMatrix()*m_mouseGlobalTX;
-      MV=  M*m_cam->getViewMatrix();
-      MVP=  MV*m_cam->getProjectionMatrix();
+      MV=  M*m_cam.getViewMatrix();
+      MVP=  MV*m_cam.getProjectionMatrix();
       ngl::Mat4 globalMV = MV.transpose();
-      ngl::Vec4 p(x,sin(x),z,1.0);
+      ngl::Vec4 p(x,sin(x),z,1.0f);
       p=globalMV*p;
       shader->setShaderParam3f("lightPos",p.m_x,p.m_y,p.m_z);
 
       shader->setShaderParamFromMat4("MVP",MVP);
-//      shader->setShaderParamFromMat4("MV",MV);
       prim->draw("lightSphere");
-
 
     }
   }
