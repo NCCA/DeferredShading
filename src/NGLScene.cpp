@@ -51,19 +51,13 @@ NGLScene::~NGLScene()
   glDeleteTextures(1,&m_normalTexID);
 }
 
-void NGLScene::resizeGL(QResizeEvent *_event)
-{
-  m_width=_event->size().width()*devicePixelRatio();
-  m_height=_event->size().height()*devicePixelRatio();
-  // now set the camera size values as the screen size has changed
-  m_cam.setShape(45.0f,(float)width()/height(),0.05f,350.0f);
-}
 
 void NGLScene::resizeGL(int _w , int _h)
 {
   m_cam.setShape(45.0f,(float)_w/_h,0.05f,350.0f);
-  m_width=_w*devicePixelRatio();
-  m_height=_h*devicePixelRatio();
+  m_width  = static_cast<int>( _w * devicePixelRatio() );
+  m_height = static_cast<int>( _h * devicePixelRatio() );
+
 }
 void NGLScene::initializeGL()
 {
@@ -128,11 +122,11 @@ void NGLScene::initializeGL()
   shader->attachShaderToProgram("Pass2","Pass2Fragment");
   shader->linkProgramObject("Pass2");
   shader->use("Pass2");
-  shader->setShaderParam1i("pointTex",0);
-  shader->setShaderParam1i("normalTex",1);
-  shader->setShaderParam1i("colourTex",2);
-  shader->setShaderParam1i("lightPassTex",3);
-  shader->setShaderParam1i("diffusePassTex",4);
+  shader->setUniform("pointTex",0);
+  shader->setUniform("normalTex",1);
+  shader->setUniform("colourTex",2);
+  shader->setUniform("lightPassTex",3);
+  shader->setUniform("diffusePassTex",4);
 
   // we are creating a shader for Debug pass
   shader->createShaderProgram("Debug");
@@ -150,13 +144,13 @@ void NGLScene::initializeGL()
   shader->attachShaderToProgram("Debug","DebugFragment");
   shader->linkProgramObject("Debug");
   shader->use("Debug");
-  shader->setShaderParam1i("pointTex",0);
-  shader->setShaderParam1i("normalTex",1);
-  shader->setShaderParam1i("colourTex",2);
-  shader->setShaderParam1i("lightPassTex",3);
-  shader->setShaderParam1i("diffusePassTex",4);
+  shader->setUniform("pointTex",0);
+  shader->setUniform("normalTex",1);
+  shader->setUniform("colourTex",2);
+  shader->setUniform("lightPassTex",3);
+  shader->setUniform("diffusePassTex",4);
 
-  shader->setRegisteredUniform1i("mode",1);
+  shader->setUniform("mode",1);
 
 
   // we are creating a shader for Lighting pass
@@ -175,12 +169,12 @@ void NGLScene::initializeGL()
   shader->attachShaderToProgram("Lighting","LightingFragment");
   shader->linkProgramObject("Lighting");
   shader->use("Lighting");
-  shader->setShaderParam1i("pointTex",0);
-  shader->setShaderParam1i("normalTex",1);
-  shader->setShaderParam1i("colourTex",2);
-  shader->setShaderParam1i("lightPassTex",3);
+  shader->setUniform("pointTex",0);
+  shader->setUniform("normalTex",1);
+  shader->setUniform("colourTex",2);
+  shader->setUniform("lightPassTex",3);
 
-  shader->setShaderParam2f("wh",width()*devicePixelRatio(),height()*devicePixelRatio());
+  shader->setUniform("wh",float(width()*devicePixelRatio()),float(height()*devicePixelRatio()));
 
   m_text.reset(new ngl::Text(QFont("Arial",14)));
   m_text->setScreenSize(width(),height());
@@ -219,8 +213,8 @@ void NGLScene::loadMatricesToShader()
   M=m_transform.getMatrix()*m_mouseGlobalTX;
   MV=  M*m_cam.getViewMatrix();
   MVP=  MV*m_cam.getProjectionMatrix();
-  shader->setShaderParamFromMat4("MVP",MVP);
-  shader->setShaderParamFromMat4("MV",MV);
+  shader->setUniform("MVP",MVP);
+  shader->setUniform("MV",MV);
 }
 
 
@@ -329,7 +323,7 @@ void NGLScene::createFrameBuffer()
   glDrawBuffers (1, lightBuffers);
 
   // now got back to the default render context
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, defaultFramebufferObject());
 
 
 }
@@ -430,7 +424,8 @@ void NGLScene::paintGL()
 
     shader->use("Debug");
     //shader->setUniform("cam",m_cam->getEye().toVec3());
-    shader->setShaderParam1i("mode",m_debugMode);
+    shader->setUniform("mode",m_debugMode);
+
     m_screenQuad->draw();
 
   }
@@ -477,11 +472,11 @@ void NGLScene::renderLightPass(const std::string &_shader)
       MV=  M*m_cam.getViewMatrix();
       MVP=  MV*m_cam.getProjectionMatrix();
       ngl::Mat4 globalMV = MV.transpose();
-      ngl::Vec4 p(x,sin(x),z,1.0f);
+      ngl::Vec4 p(x,sinf(x),z,1.0f);
       p=globalMV*p;
-      shader->setShaderParam3f("lightPos",p.m_x,p.m_y,p.m_z);
+      shader->setUniform("lightPos",p);
 
-      shader->setShaderParamFromMat4("MVP",MVP);
+      shader->setUniform("MVP",MVP);
       prim->draw("lightSphere");
 
     }
@@ -494,6 +489,7 @@ void NGLScene::renderLightPass(const std::string &_shader)
 
 void NGLScene::drawScene(const std::string &_shader)
 {
+  glViewport(0,0,m_width,m_height);
   // clear the screen and depth buffer
    // Rotation based on the mouse position for our global
    // transform
@@ -516,14 +512,14 @@ void NGLScene::drawScene(const std::string &_shader)
   glPolygonMode(GL_FRONT_AND_BACK,m_wireframe);
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",1,0,0);
+    shader->setUniform("Colour",1.0f,0.0f,0.0f);
     loadMatricesToShader();
     prim->draw("teapot");
   } // and before a pop
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",0,1,0);
+    shader->setUniform("Colour",0.0f,1.0f,0.0f);
 
     m_transform.setPosition(-3,0.0,0.0);
     loadMatricesToShader();
@@ -532,7 +528,7 @@ void NGLScene::drawScene(const std::string &_shader)
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",1,0,1);
+    shader->setUniform("Colour",1.0f,0.0f,1.0f);
 
     m_transform.setPosition(3,0.0,0.0);
     loadMatricesToShader();
@@ -541,18 +537,18 @@ void NGLScene::drawScene(const std::string &_shader)
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",0,0,1);
+    shader->setUniform("Colour",0.0f,0.0f,1.0f);
 
-    m_transform.setPosition(0.0,0.01,3.0);
+    m_transform.setPosition(0.0f,0.01f,3.0f);
     loadMatricesToShader();
     prim->draw("cube");
   } // and before a pop
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",1,1,0);
+    shader->setUniform("Colour",1.0f,1.0f,0.0f);
 
-    m_transform.setPosition(-3.0,0.05,3.0);
+    m_transform.setPosition(-3.0f,0.05f,3.0f);
     loadMatricesToShader();
     prim->draw("torus");
   } // and before a pop
@@ -560,14 +556,14 @@ void NGLScene::drawScene(const std::string &_shader)
   m_transform.reset();
   {
 
-    m_transform.setPosition(3.0,0.5,3.0);
+    m_transform.setPosition(3.0f,0.5f,3.0f);
     loadMatricesToShader();
     prim->draw("icosahedron");
   } // and before a pop
 
   m_transform.reset();
   {
-    m_transform.setPosition(0.0,0.0,-3.0);
+    m_transform.setPosition(0.0,0.0,-3.0f);
     loadMatricesToShader();
     prim->draw("cone");
   } // and before a pop
@@ -575,7 +571,7 @@ void NGLScene::drawScene(const std::string &_shader)
 
   m_transform.reset();
   {
-    m_transform.setPosition(-3.0,0.6,-3.0);
+    m_transform.setPosition(-3.0f,0.6f,-3.0f);
     loadMatricesToShader();
     prim->draw("tetrahedron");
   } // and before a pop
@@ -583,7 +579,7 @@ void NGLScene::drawScene(const std::string &_shader)
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",0,0,0);
+    shader->setUniform("Colour",0.0f,0.0f,0.0f);
 
     m_transform.setPosition(3.0,0.5,-3.0);
     loadMatricesToShader();
@@ -593,7 +589,7 @@ void NGLScene::drawScene(const std::string &_shader)
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",1,1,1);
+    shader->setUniform("Colour",1.0f,1.0f,1.0f);
 
     m_transform.setPosition(0.0,0.5,-6.0);
     loadMatricesToShader();
@@ -618,9 +614,9 @@ void NGLScene::drawScene(const std::string &_shader)
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",1,1,0);
+    shader->setUniform("Colour",1.0f,1.0f,0.0f);
 
-    m_transform.setPosition(1.0,0.35,1.0);
+    m_transform.setPosition(1.0,0.35f,1.0);
     m_transform.setScale(1.5,1.5,1.5);
     loadMatricesToShader();
     prim->draw("troll");
@@ -628,27 +624,27 @@ void NGLScene::drawScene(const std::string &_shader)
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",1,0,0);
+    shader->setUniform("Colour",1.0f,0.0f,0.0f);
 
-    m_transform.setPosition(-1.0,-0.5,1.0);
-    m_transform.setScale(0.1,0.1,0.1);
+    m_transform.setPosition(-1.0,-0.5f,1.0);
+    m_transform.setScale(0.1f,0.1f,0.1f);
     loadMatricesToShader();
     prim->draw("dragon");
   } // and before a pop
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",1,0,1);
+    shader->setUniform("Colour",1.0f,0.0f,1.0f);
 
     m_transform.setPosition(-2.5,-0.5,1.0);
-    m_transform.setScale(0.1,0.1,0.1);
+    m_transform.setScale(0.1f,0.1f,0.1f);
     loadMatricesToShader();
     prim->draw("buddah");
   } // and before a pop
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",1,0,0);
+    shader->setUniform("Colour",1.0f,0.0f,0.0f);
 
     m_transform.setPosition(2.5,-0.5,1.0);
     m_transform.setScale(0.1,0.1,0.1);
@@ -658,7 +654,7 @@ void NGLScene::drawScene(const std::string &_shader)
 
   m_transform.reset();
   {
-    shader->setShaderParam3f("Colour",0,0,0.8);
+    shader->setUniform("Colour",0.0f,0.0f,0.8f);
 
     m_transform.setPosition(0.0,-0.5,0.0);
     loadMatricesToShader();
@@ -834,7 +830,7 @@ void NGLScene::printFrameBufferInfo(GLuint _fbID)
 		++i;
 
 	} while (buffer != GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER,0);
+	glBindFramebuffer(GL_FRAMEBUFFER,defaultFramebufferObject());
 }
 
 
