@@ -1,5 +1,5 @@
-#ifndef SCREEN_QUAD_H__
-#define SCREEN_QUAD_H__
+#ifndef SCREEN_QUAD_H_
+#define SCREEN_QUAD_H_
 #include <ngl/Vec2.h>
 #include <ngl/Vec3.h>
 #include <string>

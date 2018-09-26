@@ -3,7 +3,7 @@
 // first attribute the vertex values from our VAO
 layout (location = 0) in vec3 inVert;
 // second attribute the UV values from our VAO
-layout (location = 1) in vec2 inUV;
+layout (location = 2) in vec2 inUV;
 // we use this to pass the UV values to the frag shader
 out vec2 vertUV;
 uniform mat4 MVP;

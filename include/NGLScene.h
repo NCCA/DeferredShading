@@ -1,8 +1,5 @@
-#ifndef NGLSCENE_H__
-#define NGLSCENE_H__
-#include <ngl/Camera.h>
-#include <ngl/Colour.h>
-#include <ngl/Light.h>
+#ifndef NGLSCENE_H_
+#define NGLSCENE_H_
 #include <ngl/Transformation.h>
 #include <ngl/Text.h>
 #include <iostream>
@@ -117,7 +114,8 @@ private:
     GLuint m_shadingTexID;
     GLuint m_depthTex;
 
-    ngl::Camera m_cam;
+    ngl::Mat4 m_view;
+    ngl::Mat4 m_project;
     GLenum m_wireframe;
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief our font / text

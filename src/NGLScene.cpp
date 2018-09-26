@@ -2,9 +2,6 @@
 #include <QGuiApplication>
 
 #include "NGLScene.h"
-#include <ngl/Camera.h>
-#include <ngl/Light.h>
-#include <ngl/Material.h>
 #include <ngl/NGLInit.h>
 #include <ngl/VAOPrimitives.h>
 #include <ngl/ShaderLib.h>
@@ -15,11 +12,11 @@
 //----------------------------------------------------------------------------------------------------------------------
 /// @brief the increment for x/y translation with mouse movement
 //----------------------------------------------------------------------------------------------------------------------
-const static float INCREMENT=0.01;
+const static float INCREMENT=0.01f;
 //----------------------------------------------------------------------------------------------------------------------
 /// @brief the increment for the wheel zoom
 //----------------------------------------------------------------------------------------------------------------------
-const static float ZOOM=0.1;
+const static float ZOOM=0.1f;
 
 const static int FBWIDTH=1024;
 const static int FBHEIGHT=720;
@@ -54,7 +51,7 @@ NGLScene::~NGLScene()
 
 void NGLScene::resizeGL(int _w , int _h)
 {
-  m_cam.setShape(45.0f,(float)_w/_h,0.05f,350.0f);
+  m_project=ngl::perspective(45.0f,(float)_w/_h,0.05f,350.0f);
   m_width  = static_cast<int>( _w * devicePixelRatio() );
   m_height = static_cast<int>( _h * devicePixelRatio() );
 
@@ -71,10 +68,10 @@ void NGLScene::initializeGL()
   ngl::Vec3 to(0.0f,0.0f,0.0f);
   ngl::Vec3 up(0.0f,1.0f,0.0f);
   // now load to our new camera
-  m_cam.set(from,to,up);
+  m_view=ngl::lookAt(from,to,up);
   // set the shape using FOV 45 Aspect Ratio based on Width and Height
   // The final two are near and far clipping planes of 0.5 and 10
-  m_cam.setShape(45.0f,(float)float(width()/height()),0.05f,350.0f);
+  m_project=ngl::perspective(45.0f,(float)float(width()/height()),0.05f,350.0f);
 
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);			   // Grey Background
   // enable depth testing for drawing
@@ -211,8 +208,8 @@ void NGLScene::loadMatricesToShader()
   ngl::Mat4 M;
 
   M=m_mouseGlobalTX*m_transform.getMatrix();
-  MV=  m_cam.getViewMatrix()*M;
-  MVP=  m_cam.getProjectionMatrix()*MV;
+  MV=  m_view*M;
+  MVP= m_project*MV;
   shader->setUniform("MVP",MVP);
   shader->setUniform("MV",MV);
 }
@@ -262,7 +259,7 @@ void NGLScene::createFrameBuffer()
   // set params
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
   glGenTextures(1, &m_shadingTexID);
   // bind it to make it active
@@ -270,7 +267,7 @@ void NGLScene::createFrameBuffer()
   // set params
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
 
   // The depth buffer
@@ -469,8 +466,8 @@ void NGLScene::renderLightPass(const std::string &_shader)
       ngl::Mat4 M;
 
       M=m_transform.getMatrix()*m_mouseGlobalTX;
-      MV=  M*m_cam.getViewMatrix();
-      MVP=  MV*m_cam.getProjectionMatrix();
+      MV=  m_view*M;
+      MVP=  m_project=MV;
       ngl::Mat4 globalMV = MV.transpose();
       ngl::Vec4 p(x,sinf(x),z,1.0f);
       p=globalMV*p;
